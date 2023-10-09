@@ -25,7 +25,7 @@ module.exports = class Chat extends Sequelize.Model {
             placeDistance: { // user-share
                 type: Sequelize.FLOAT,
             },
-            placeLink: { // user-share
+            placeURL: { // user-share
                 type: Sequelize.STRING(150),
             },
         }, {
