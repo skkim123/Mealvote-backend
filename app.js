@@ -186,10 +186,20 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('deleteCandidate',(candidate)=>{
-        Candidate.destroy({where:{roomID,placeID:candidate.placeID}}).then(()=>{
-            io.to(roomID).emit('deleteCandidate',candidate);
+    socket.on('deleteCandidate', (candidate) => {
+        Candidate.destroy({ where: { roomID, placeID: candidate.placeID } }).then(() => {
+            io.to(roomID).emit('deleteCandidate', candidate);
         });
+    });
+
+    socket.on('voteStart', () => {
+        io.to(roomID).emit('system', { chatType: 'system', message: '투표가 곧 시작됩니다...' });
+        setTimeout(() => {
+            Room.update({ votingInProgress: 'Y' }, { where: { roomID } }).then(() => {
+                io.to(roomID).emit('voteStart');
+                io.to(roomID).emit('system', { chatType: 'system', message: '투표 시작 !' });
+            });
+        }, 3000);
     });
 });
 
