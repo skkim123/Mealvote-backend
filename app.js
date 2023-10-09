@@ -3,7 +3,7 @@ eslint + indent
 try-catch 마치 노드교과서
 에러 페이지 미들웨어 장착??? 리액트랑 연결 시에는 어떻게
 console.log 나 의미없는 공백 지우기
-winston 같은 국룰 패키지 덕지덕지
+pm2 , winston 같은 국룰 패키지 덕지덕지
 
 <frontend>
 keywordSearch 할 때 FD6 카테고리 동봉? 아니면 음식점만 검색 토글버튼 넣기?
@@ -21,7 +21,7 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 const uuid = require('uuid');
 const cors = require('cors');
-const { sequelize, Room, Chat } = require('./models');
+const { sequelize, Room, Chat, Candidate } = require('./models');
 const phraseGenerator = require('korean-random-words');
 
 const PORT_NUM = 5000;
@@ -78,7 +78,7 @@ app.post('/rooms', async (req, res) => {
 
 app.get('/rooms/check/:roomID', (req, res) => {
     const roomID = req.params.roomID;
-    Room.findOne({ where: { roomID }, include: [{ model: Chat }] }).then((room) => {
+    Room.findOne({ where: { roomID }, include: [{ model: Chat }, { model: Candidate }] }).then((room) => {
         if (room) {
             res.send({
                 isRoomExist: true,
@@ -88,6 +88,7 @@ app.get('/rooms/check/:roomID', (req, res) => {
                 votingInProgress: room.votingInProgress,
                 chats: room.Chats.sort((a, b) => a.createdAt - b.createdAt),
                 name: req.session.username,
+                candidates: room.Candidates,
             });
         } else {
             res.send({ isRoomExist: false });
@@ -130,7 +131,6 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('user disconnected');
         socket.leave(roomID);
-
         if (!socket.adapter.rooms.has(roomID) || !(socket.adapter.rooms.get(roomID)?.size)) {
             Room.destroy({ where: { roomID } });
         } else { // still has users in the room
@@ -156,11 +156,36 @@ io.on('connection', (socket) => {
             roomID,
             placeName: place.place_name,
             placeAddress: place.address_name,
-            placeCategory: place.category_name.split('>').slice(-1)[0],
+            placeCategory: place.category_name?.split('>').slice(-1)[0],
             placeDistance: place.distance,
-            placeLink: place.place_url,
+            placeURL: place.place_url,
         }).then((chat) => {
             io.to(roomID).emit('userShare', chat);
+        });
+    });
+
+    socket.on('addCandidate', (place) => {
+        Candidate.findOne({ where: { roomID, placeID: place.id } }).then((candidate) => {
+            if (!candidate) {
+                Candidate.create({
+                    placeID: place.id,
+                    placeName: place.place_name,
+                    placeCategory: place.category_name?.split('>').slice(-1)[0],
+                    placeAddress: place.address_name,
+                    placeDistance: place.distance,
+                    placePhone: place.phone,
+                    placeURL: place.place_url,
+                    roomID,
+                }).then((candidate) => {
+                    io.to(roomID).emit('addCandidate', candidate);
+                });
+            }
+        });
+    });
+
+    socket.on('deleteCandidate',(candidate)=>{
+        Candidate.destroy({where:{roomID,placeID:candidate.placeID}}).then(()=>{
+            io.to(roomID).emit('deleteCandidate',candidate);
         });
     });
 });
