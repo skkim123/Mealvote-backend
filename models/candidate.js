@@ -28,6 +28,9 @@ module.exports = class Candidate extends Sequelize.Model {
             placeURL: {
                 type: Sequelize.STRING(100),
             },
+            voteCount: {
+                type: Sequelize.INTEGER,
+            },
         }, {
             sequelize,
             timestamps: true,
