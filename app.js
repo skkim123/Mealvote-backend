@@ -1,14 +1,15 @@
 /* 
 eslint + indent
 try-catch 마치 노드교과서
+에러 페이지 미들웨어 장착??? 리액트랑 연결 시에는 어떻게
 console.log 나 의미없는 공백 지우기
 winston 같은 국룰 패키지 덕지덕지
 
 <frontend>
 keywordSearch 할 때 FD6 카테고리 동봉? 아니면 음식점만 검색 토글버튼 넣기?
 검색결과 pagination 기능
+스피너 추가
 */
-
 
 const express = require('express');
 const http = require('http');
@@ -86,6 +87,7 @@ app.get('/rooms/check/:roomID', (req, res) => {
                 longitude: room.longitude,
                 votingInProgress: room.votingInProgress,
                 chats: room.Chats.sort((a, b) => a.createdAt - b.createdAt),
+                name: req.session.username,
             });
         } else {
             res.send({ isRoomExist: false });
@@ -116,7 +118,7 @@ io.on('connection', (socket) => {
                 socket.join(roomID);
                 Chat.create({
                     chatType: 'system',
-                    message: `${socket.request.session.username}님이 입장하셨습니다.`,
+                    message: `${socket.request.session.username} 님이 입장하셨습니다.`,
                     roomID,
                 }).then((chat) => {
                     io.to(roomID).emit('system', chat);
