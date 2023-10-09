@@ -1,11 +1,12 @@
 /* 
-
 eslint + indent
 try-catch 마치 노드교과서
-
-
+console.log 나 의미없는 공백 지우기
+winston 같은 국룰 패키지 덕지덕지
 
 <frontend>
+keywordSearch 할 때 FD6 카테고리 동봉? 아니면 음식점만 검색 토글버튼 넣기?
+검색결과 pagination 기능
 */
 
 
@@ -19,9 +20,11 @@ const dotenv = require('dotenv');
 const morgan = require('morgan');
 const uuid = require('uuid');
 const cors = require('cors');
-const { sequelize, Room } = require('./models');
+const { sequelize, Room, Chat } = require('./models');
+const phraseGenerator = require('korean-random-words');
 
 const PORT_NUM = 5000;
+const phraseGen = new phraseGenerator();
 
 dotenv.config();
 
@@ -53,6 +56,12 @@ const sessionMiddleware = session({
     store: new fileStore(),
 });
 app.use(sessionMiddleware);
+app.use((req, res, next) => {
+    if (!req.session.username) {
+        req.session.username = phraseGen.generatePhrase().replace(/-/g, ' ');
+    }
+    next();
+});
 
 app.post('/rooms', async (req, res) => {
     const roomID = uuid.v4().replace(/-/g, '');
@@ -68,7 +77,7 @@ app.post('/rooms', async (req, res) => {
 
 app.get('/rooms/check/:roomID', (req, res) => {
     const roomID = req.params.roomID;
-    Room.findOne({ where: { roomID } }).then((room) => {
+    Room.findOne({ where: { roomID }, include: [{ model: Chat }] }).then((room) => {
         if (room) {
             res.send({
                 isRoomExist: true,
@@ -76,6 +85,7 @@ app.get('/rooms/check/:roomID', (req, res) => {
                 latitude: room.latitude,
                 longitude: room.longitude,
                 votingInProgress: room.votingInProgress,
+                chats: room.Chats.sort((a, b) => a.createdAt - b.createdAt),
             });
         } else {
             res.send({ isRoomExist: false });
@@ -104,7 +114,13 @@ io.on('connection', (socket) => {
         (room) => {
             if (room) {
                 socket.join(roomID);
-                socket.emit('join', { roomID });
+                Chat.create({
+                    chatType: 'system',
+                    message: `${socket.request.session.username}님이 입장하셨습니다.`,
+                    roomID,
+                }).then((chat) => {
+                    io.to(roomID).emit('system', chat);
+                });
             }
         }
     );
@@ -120,8 +136,30 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('message',()=>{
-        
+    socket.on('userChat', (message) => {
+        Chat.create({
+            chatType: 'user-chat',
+            username: socket.request.session.username,
+            message,
+            roomID,
+        }).then((chat) => {
+            io.to(roomID).emit('userChat', chat);
+        });
+    });
+
+    socket.on('userShare', (place) => {
+        Chat.create({
+            chatType: 'user-share',
+            username: socket.request.session.username,
+            roomID,
+            placeName: place.place_name,
+            placeAddress: place.address_name,
+            placeCategory: place.category_name.split('>').slice(-1)[0],
+            placeDistance: place.distance,
+            placeLink: place.place_url,
+        }).then((chat) => {
+            io.to(roomID).emit('userShare', chat);
+        });
     });
 });
 

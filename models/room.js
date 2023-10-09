@@ -37,6 +37,6 @@ module.exports = class Room extends Sequelize.Model {
     }
 
     static associate(db) {
-
+        db.Room.hasMany(db.Chat, { foreignKey: 'roomID', sourceKey: 'roomID', onDelete: 'CASCADE' });
     }
 }
