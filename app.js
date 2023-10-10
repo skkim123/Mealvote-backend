@@ -177,7 +177,7 @@ io.on('connection', (socket) => {
                     placeDistance: place.distance,
                     placePhone: place.phone,
                     placeURL: place.place_url,
-                    voteCount: 0,
+                    voters: "[]",
                     roomID,
                 }).then((candidate) => {
                     io.to(roomID).emit('addCandidate', candidate);
