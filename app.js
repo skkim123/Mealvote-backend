@@ -12,6 +12,8 @@ Votepage sprite 이미지로 마커 불러오기
 스피너 추가
 wheel로 지도 줌 인 아웃 가능하게 설정
 채팅창 밑에 현재 참여자 명단 띄우거나 참여자 수 띄우기
+투표 시 만약 공동 1등 나올 경우? -> 랜덤으로 1개 뽑기????
+setState 인자 함수 형태로 바꿀 수 있는 것 바꾸기 ?
 */
 
 const express = require('express');
@@ -221,6 +223,31 @@ io.on('connection', (socket) => {
                 });
             }
         });
+    });
+
+    socket.on('voteFinish',()=>{
+        io.to(roomID).emit('system', { chatType: 'system', message: '투표가 곧 종료됩니다...' });
+        io.to(roomID).emit('system', { chatType: 'system', message: '공동 1등이 있을 경우 그 중 무작위로 결정됩니다.' });
+        setTimeout(() => {
+            const voteResult = {};
+            Room.findOne({ where: { roomID } }).then((room) => {
+                const voters = JSON.parse(room.voters);
+                voters.forEach((voter) => {
+                    if (voteResult[voter.placeID]) {
+                        voteResult[voter.placeID] += 1;
+                    } else {
+                        voteResult[voter.placeID] = 1;
+                    }
+                });
+                const maxVote = Math.max(...Object.values(voteResult));
+                const maxVoteCandidates = Object.keys(voteResult).filter((key) => voteResult[key] === maxVote);
+                const winner = maxVoteCandidates[Math.floor(Math.random() * maxVoteCandidates.length)];
+                Candidate.findOne({ where: { roomID, placeID: winner } }).then((candidate) => {
+                    io.to(roomID).emit('system', { chatType: 'system', message: '투표가 종료되었습니다.' });
+                    io.to(roomID).emit('voteFinish', candidate);
+                });
+            });
+        }, 3000);
     });
 });
 
