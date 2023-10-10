@@ -92,6 +92,7 @@ app.get('/rooms/check/:roomID', (req, res) => {
                 chats: room.Chats.sort((a, b) => a.createdAt - b.createdAt),
                 name: req.session.username,
                 candidates: room.Candidates,
+                voteCount : JSON.parse(room.voters).length,
             });
         } else {
             res.send({ isRoomExist: false });
@@ -114,7 +115,6 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-    // const req = socket.request;
     const roomID = socket.handshake.query.roomID;
     Room.findOne({ where: { roomID } }).then(
         (room) => {
@@ -202,8 +202,24 @@ io.on('connection', (socket) => {
         }, 3000);
     });
 
-    socket.on('vote',(candidate)=>{
-        //
+    socket.on('vote', (candidate) => {
+        const req = socket.request;
+        Room.findOne({ where: { roomID } }).then((room) => {
+            const voters = JSON.parse(room.voters);
+
+            const idx = voters.findIndex(obj => obj.username === req.session.username);
+            if (idx === -1) {
+                voters.push({ username: req.session.username, placeID: candidate.placeID });
+                Room.update({ voters: JSON.stringify(voters) }, { where: { roomID } }).then(() => {
+                    io.to(roomID).emit('vote', voters.length);
+                });
+            } else {
+                voters[idx].placeID = candidate.placeID;
+                Room.update({ voters: JSON.stringify(voters) }, { where: { roomID } }).then(() => {
+                    io.to(roomID).emit('vote', voters.length);
+                });
+            }
+        });
     });
 });
 
