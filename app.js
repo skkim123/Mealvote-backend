@@ -9,6 +9,8 @@ pm2 , winston 같은 국룰 패키지 덕지덕지
 keywordSearch 할 때 FD6 카테고리 동봉? 아니면 음식점만 검색 토글버튼 넣기?
 검색결과 pagination 기능
 스피너 추가
+wheel로 지도 줌 인 아웃 가능하게 설정
+채팅창 밑에 현재 참여자 명단 띄우거나 참여자 수 띄우기
 */
 
 const express = require('express');
@@ -72,6 +74,7 @@ app.post('/rooms', async (req, res) => {
         longitude: req.body.longitude,
         votingInProgress: 'N',
         ownerID: req.sessionID,
+        voters: "[]",
     });
     res.send({ roomID });
 });
@@ -89,6 +92,7 @@ app.get('/rooms/check/:roomID', (req, res) => {
                 chats: room.Chats.sort((a, b) => a.createdAt - b.createdAt),
                 name: req.session.username,
                 candidates: room.Candidates,
+                voteCount : JSON.parse(room.voters).length,
             });
         } else {
             res.send({ isRoomExist: false });
@@ -111,7 +115,6 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-    // const req = socket.request;
     const roomID = socket.handshake.query.roomID;
     Room.findOne({ where: { roomID } }).then(
         (room) => {
@@ -183,9 +186,39 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('deleteCandidate',(candidate)=>{
-        Candidate.destroy({where:{roomID,placeID:candidate.placeID}}).then(()=>{
-            io.to(roomID).emit('deleteCandidate',candidate);
+    socket.on('deleteCandidate', (candidate) => {
+        Candidate.destroy({ where: { roomID, placeID: candidate.placeID } }).then(() => {
+            io.to(roomID).emit('deleteCandidate', candidate);
+        });
+    });
+
+    socket.on('voteStart', () => {
+        io.to(roomID).emit('system', { chatType: 'system', message: '투표가 곧 시작됩니다...' });
+        setTimeout(() => {
+            Room.update({ votingInProgress: 'Y' }, { where: { roomID } }).then(() => {
+                io.to(roomID).emit('voteStart');
+                io.to(roomID).emit('system', { chatType: 'system', message: '투표 시작 !' });
+            });
+        }, 3000);
+    });
+
+    socket.on('vote', (candidate) => {
+        const req = socket.request;
+        Room.findOne({ where: { roomID } }).then((room) => {
+            const voters = JSON.parse(room.voters);
+
+            const idx = voters.findIndex(obj => obj.username === req.session.username);
+            if (idx === -1) {
+                voters.push({ username: req.session.username, placeID: candidate.placeID });
+                Room.update({ voters: JSON.stringify(voters) }, { where: { roomID } }).then(() => {
+                    io.to(roomID).emit('vote', voters.length);
+                });
+            } else {
+                voters[idx].placeID = candidate.placeID;
+                Room.update({ voters: JSON.stringify(voters) }, { where: { roomID } }).then(() => {
+                    io.to(roomID).emit('vote', voters.length);
+                });
+            }
         });
     });
 });
