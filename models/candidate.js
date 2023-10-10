@@ -28,9 +28,6 @@ module.exports = class Candidate extends Sequelize.Model {
             placeURL: {
                 type: Sequelize.STRING(100),
             },
-            voters: {
-                type: Sequelize.TEXT, // communicate by json format
-            },
         }, {
             sequelize,
             timestamps: true,

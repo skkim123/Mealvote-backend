@@ -74,6 +74,7 @@ app.post('/rooms', async (req, res) => {
         longitude: req.body.longitude,
         votingInProgress: 'N',
         ownerID: req.sessionID,
+        voters: "[]",
     });
     res.send({ roomID });
 });
@@ -177,7 +178,6 @@ io.on('connection', (socket) => {
                     placeDistance: place.distance,
                     placePhone: place.phone,
                     placeURL: place.place_url,
-                    voters: "[]",
                     roomID,
                 }).then((candidate) => {
                     io.to(roomID).emit('addCandidate', candidate);
@@ -200,6 +200,10 @@ io.on('connection', (socket) => {
                 io.to(roomID).emit('system', { chatType: 'system', message: '투표 시작 !' });
             });
         }, 3000);
+    });
+
+    socket.on('vote',(candidate)=>{
+        //
     });
 });
 

@@ -24,6 +24,10 @@ module.exports = class Room extends Sequelize.Model {
                 type: Sequelize.STRING(1),
                 allowNull: false,
             },
+            voters: { // json string
+                type: Sequelize.TEXT,
+                allowNull: false,
+            }
         }, {
             sequelize,
             timestamps: true,
