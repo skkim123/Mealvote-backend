@@ -8,6 +8,7 @@ pm2 , winston 같은 국룰 패키지 덕지덕지
 <frontend>
 keywordSearch 할 때 FD6 카테고리 동봉? 아니면 음식점만 검색 토글버튼 넣기?
 검색결과 pagination 기능
+Votepage sprite 이미지로 마커 불러오기
 스피너 추가
 wheel로 지도 줌 인 아웃 가능하게 설정
 채팅창 밑에 현재 참여자 명단 띄우거나 참여자 수 띄우기
