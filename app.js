@@ -181,6 +181,8 @@ io.on('connection', (socket) => {
                     placeDistance: place.distance,
                     placePhone: place.phone,
                     placeURL: place.place_url,
+                    placeLatitude: place.y,
+                    placeLongitude: place.x,
                     roomID,
                 }).then((candidate) => {
                     io.to(roomID).emit('addCandidate', candidate);
