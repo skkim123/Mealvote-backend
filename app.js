@@ -9,7 +9,6 @@ pm2 , winston 같은 국룰 패키지 덕지덕지
 스피너 추가
 wheel로 지도 줌 인 아웃 가능하게 설정
 채팅창 밑에 현재 참여자 명단 띄우거나 참여자 수 띄우기
-투표 시 만약 공동 1등 나올 경우? -> 랜덤으로 1개 뽑기????
 setState 인자 함수 형태로 바꿀 수 있는 것 바꾸기 ?
 */
 
@@ -32,7 +31,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-    origin: process.env.ORIGIN,
+    origin: process.env.ORIGIN || 'http://localhost:3000',
     credentials: true,
 }));
 app.use(morgan('dev'));
@@ -99,10 +98,14 @@ app.get('/rooms/check/:roomID', (req, res) => {
     });
 });
 
+app.get('*',(req,res)=>{
+    res.sendFile(path.join('..','frontend/build/index.html'));
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.ORIGIN,
+        origin: process.env.ORIGIN || 'http://localhost:3000',
         methods: ['GET', 'POST'],
         credentials: true,
     }
