@@ -6,9 +6,6 @@ console.log 나 의미없는 공백 지우기
 pm2 , winston 같은 국룰 패키지 덕지덕지
 
 <frontend>
-keywordSearch 할 때 FD6 카테고리 동봉? 아니면 음식점만 검색 토글버튼 넣기?
-검색결과 pagination 기능
-Votepage sprite 이미지로 마커 불러오기
 스피너 추가
 wheel로 지도 줌 인 아웃 가능하게 설정
 채팅창 밑에 현재 참여자 명단 띄우거나 참여자 수 띄우기
@@ -28,15 +25,14 @@ const uuid = require('uuid');
 const cors = require('cors');
 const { sequelize, Room, Chat, Candidate } = require('./models');
 const phraseGenerator = require('korean-random-words');
-
-const PORT_NUM = 5000;
 const phraseGen = new phraseGenerator();
+const PORT_NUM = 5000;
 
 dotenv.config();
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.ORIGIN,
     credentials: true,
 }));
 app.use(morgan('dev'));
@@ -104,10 +100,9 @@ app.get('/rooms/check/:roomID', (req, res) => {
 });
 
 const server = http.createServer(app);
-
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:3000',
+        origin: process.env.ORIGIN,
         methods: ['GET', 'POST'],
         credentials: true,
     }
