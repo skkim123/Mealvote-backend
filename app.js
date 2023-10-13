@@ -14,6 +14,7 @@ setState 인자 함수 형태로 바꿀 수 있는 것 바꾸기 ?
 
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -45,6 +46,7 @@ sequelize.sync({ force: false })
     });
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.resolve(__dirname, '..', 'frontend', 'build')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 const sessionMiddleware = session({
     resave: false,
@@ -90,7 +92,7 @@ app.get('/rooms/check/:roomID', (req, res) => {
                 chats: room.Chats.sort((a, b) => a.createdAt - b.createdAt),
                 name: req.session.username,
                 candidates: room.Candidates,
-                voteCount : JSON.parse(room.voters).length,
+                voteCount: JSON.parse(room.voters).length,
             });
         } else {
             res.send({ isRoomExist: false });
@@ -98,9 +100,10 @@ app.get('/rooms/check/:roomID', (req, res) => {
     });
 });
 
-app.get('*',(req,res)=>{
-    res.sendFile(path.join('..','frontend/build/index.html'));
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '..', 'frontend', 'build', 'index.html'));
 });
+
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -225,7 +228,7 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('voteFinish',()=>{
+    socket.on('voteFinish', () => {
         io.to(roomID).emit('system', { chatType: 'system', message: '투표가 곧 종료됩니다...' });
         io.to(roomID).emit('system', { chatType: 'system', message: '공동 1등이 있을 경우 그 중 무작위로 결정됩니다.' });
         setTimeout(() => {
