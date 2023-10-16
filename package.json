@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "pm2 start app.js",
+    "start": "sudo cross-env NODE_ENV=production PORT=443 pm2 start app.js",
     "dev": "nodemon app.js"
   },
   "keywords": [],
@@ -16,6 +16,7 @@
     "cross-env": "^7.0.3",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-mysql-session": "^3.0.0",
     "express-session": "^1.17.3",
     "korean-random-words": "^1.0.3",
     "morgan": "^1.10.0",
@@ -23,7 +24,6 @@
     "pm2": "^5.3.0",
     "sequelize": "^6.33.0",
     "sequelize-cli": "^6.6.1",
-    "session-file-store": "^1.5.0",
     "socket.io": "^4.7.2",
     "uuid": "^9.0.1"
   },

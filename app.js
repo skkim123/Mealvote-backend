@@ -1,24 +1,12 @@
-/* 
-eslint + indent
-try-catch 마치 노드교과서
-에러 페이지 미들웨어 장착??? 리액트랑 연결 시에는 어떻게
-console.log 나 의미없는 공백 지우기
-pm2 , winston 같은 국룰 패키지 덕지덕지
-
-<frontend>
-스피너 추가
-wheel로 지도 줌 인 아웃 가능하게 설정
-채팅창 밑에 현재 참여자 명단 띄우거나 참여자 수 띄우기
-setState 인자 함수 형태로 바꿀 수 있는 것 바꾸기 ?
-*/
-
 const express = require('express');
 const http = require('http');
+const https = require('https');
+const fs = require('fs');
 const path = require('path');
 const { Server } = require('socket.io');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-const fileStore = require('session-file-store')(session);
+const MySQLStore = require('express-mysql-session')(session);
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 const uuid = require('uuid');
@@ -26,7 +14,7 @@ const cors = require('cors');
 const { sequelize, Room, Chat, Candidate } = require('./models');
 const phraseGenerator = require('korean-random-words');
 const phraseGen = new phraseGenerator();
-const PORT_NUM = 5000;
+const LOCAL_PORT_NUM = 5000;
 
 dotenv.config();
 
@@ -35,8 +23,15 @@ app.use(cors({
     origin: process.env.ORIGIN || 'http://localhost:3000',
     credentials: true,
 }));
-app.use(morgan('dev'));
-app.set('port', process.env.PORT || PORT_NUM);
+
+if(process.env.NODE_ENV === 'production'){
+    app.use(morgan('combined'));
+} else {
+    app.use(morgan('dev'));
+}
+
+app.set('port', process.env.PORT || LOCAL_PORT_NUM);
+
 sequelize.sync({ force: false })
     .then(() => {
         console.log('DB connected');
@@ -44,11 +39,21 @@ sequelize.sync({ force: false })
     .catch((err) => {
         console.error(err);
     });
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.resolve(__dirname, '..', 'frontend', 'build')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
-const sessionMiddleware = session({
+
+const sessionStore = new MySQLStore({
+    host: process.env.PRODUCTION_DB_HOST || 'localhost',
+    port: 3306,
+    user: process.env.PRODUCTION_DB_USERNAME || 'root',
+    password: process.env.PRODUCTION_DB_PASSWORD || process.env.DB_PASSWORD,
+    database: 'sessions',
+});
+
+const sessionOption = {
     resave: false,
     saveUninitialized: true,
     secret: process.env.COOKIE_SECRET,
@@ -56,8 +61,16 @@ const sessionMiddleware = session({
         httpOnly: true,
         secure: false,
     },
-    store: new fileStore(),
-});
+    store: sessionStore,
+}
+
+if(process.env.NODE_ENV === 'production'){
+    sessionOption.cookie.secure = true;
+    sessionOption.proxy = true;
+}
+
+const sessionMiddleware = session(sessionOption);
+
 app.use(sessionMiddleware);
 app.use((req, res, next) => {
     if (!req.session.username) {
@@ -105,7 +118,16 @@ app.get('*', (req, res) => {
 });
 
 
-const server = http.createServer(app);
+let server;
+if(process.env.NODE_ENV === 'production'){
+    server = https.createServer({
+        cert: fs.readFileSync('./cert/cert.pem'),
+        key: fs.readFileSync('./cert/key.pem'),
+    }, app);
+} else {
+    server = http.createServer(app);
+}
+
 const io = new Server(server, {
     cors: {
         origin: process.env.ORIGIN || 'http://localhost:3000',
@@ -140,8 +162,6 @@ io.on('connection', (socket) => {
         socket.leave(roomID);
         if (!socket.adapter.rooms.has(roomID) || !(socket.adapter.rooms.get(roomID)?.size)) {
             Room.destroy({ where: { roomID } });
-        } else { // still has users in the room
-
         }
     });
 
