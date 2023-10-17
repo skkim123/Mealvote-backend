@@ -18,8 +18,9 @@
 ## 기능과 화면
 
 - 주의 : HTML geolocation API가 제대로 작동하기 위해서 위치 정보 사용 허용이 필요하다. 
-  지도가 안 뜬 상태에서 '현재 위치로 방 만들기' 누르면 기본 위치인 강남역을 기준으로 방이 생성된다.
-  <img src="./images/location_access.png" width="250px" height="100px" style="margin-bottom: 20px; margin-top:20px;"/>
+지도가 안 뜬 상태에서 '현재 위치로 방 만들기' 누르면 기본 위치인 강남역을 기준으로 방이 생성된다.
+
+<img src="./images/location_access.png" width="250px" height="100px" style="margin-bottom: 20px; margin-top:20px;"/>
 
 ### 메인 화면
 
@@ -38,6 +39,7 @@
 - '채팅창 주소 복사하기' 버튼을 클릭하면 클립 보드에 해당 방의 URL이 복사된다. 이를 다른 사람에게 공유하여 방으로 초대할 수 있다.
 - '주변 식당 키워드로 검색'을 통해서 주변 음식점들을 키워드로 검색할 수 있다. 검색 반경은 슬라이더를 통해서 조절할 수 있다.
   키워드를 검색하면 지도에 검색된 식당들이 마커로 표시된다.
+
 <div style="margin-bottom: 20px; margin-top:20px;">
   <img src="./images/search_result.png" width="300px" height="300px"/>  
   <img src="./images/search_result_map.png" width="300px" height="300px"/>
